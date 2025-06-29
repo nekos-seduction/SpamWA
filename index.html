@@ -1,0 +1,1333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpamWA</title>
+    <!-- Font Awesome para los iconos de redes sociales y el carrusel -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Anime.js para las animaciones del carrusel y el espiral -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <!-- Tailwind CSS para utilidades generales de estilo y responsividad -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Definiciones de propiedades personalizadas para animaciones del bot */
+        @layer properties {
+            @property --elh { syntax: '<number>'; inherits: true; initial-value: 1; }
+            @property --erx { syntax: '<percentage>'; inherits: true; initial-value: 0%; }
+            @property --fx { syntax: '<percentage>'; inherits: true; initial-value: 0%; }
+            @property --ealw { syntax: '<number>'; inherits: true; initial-value: 1; }
+            @property --earw { syntax: '<number>'; inherits: true; initial-value: 1; }
+            @property --erh { syntax: '<number>'; inherits: true; initial-value: 1; }
+            @property --mh { syntax: '<number>'; inherits: true; initial-value: 1; }
+            @property --mw { syntax: '<number>'; inherits: true; initial-value: 1; }
+        }
+
+        :root {
+            --surface: #111;
+            --c: white;
+            --c2: #9ae3dc;
+            --c3: magenta;
+        }
+
+        /* Estilos generales del cuerpo */
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            background-color: #f5f5f5; /* Fondo predeterminado */
+            overflow-x: hidden; /* Evitar el desplazamiento horizontal */
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Estilos específicos para la sección del carrusel */
+        .carousel-container-wrapper {
+            position: relative; /* Para el título absoluto */
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh; /* Ajustar la altura para que el carrusel sea el enfoque */
+            padding-top: 100px; /* Espacio para el encabezado fijo */
+            padding-bottom: 50px;
+        }
+
+        .about-title {
+            font-size: 7.5rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+            position: absolute;
+            top: 45px; /* Ajustar para que no colisione con el header */
+            left: 50%;
+            transform: translateX(-50%);
+            pointer-events: none;
+            white-space: nowrap;
+            font-family: "Arial Black", "Arial Bold", Arial, sans-serif;
+            background: linear-gradient(
+                to bottom,
+                rgb(8 42 123 / 35%) 30%,
+                rgb(255 255 255 / 0%) 76%
+            );
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            z-index: 10; /* Asegurar que esté sobre el carrusel pero debajo del header */
+        }
+
+        .carousel-container {
+            width: 100%;
+            max-width: 1200px;
+            height: 450px;
+            position: relative;
+            perspective: 1000px;
+            margin-top: 80px; /* Ajuste para el título */
+        }
+
+        .carousel-track {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .card {
+            position: absolute;
+            width: 280px;
+            height: 380px;
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+            transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            cursor: pointer;
+        }
+
+        .card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: all 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+
+        .card.center { z-index: 10; transform: scale(1.1) translateZ(0); }
+        .card.center img { filter: none; }
+        .card.left-2 { z-index: 1; transform: translateX(-400px) scale(0.8) translateZ(-300px); opacity: 0.7; }
+        .card.left-2 img { filter: grayscale(100%); }
+        .card.left-1 { z-index: 5; transform: translateX(-200px) scale(0.9) translateZ(-100px); opacity: 0.9; }
+        .card.left-1 img { filter: grayscale(100%); }
+        .card.right-1 { z-index: 5; transform: translateX(200px) scale(0.9) translateZ(-100px); opacity: 0.9; }
+        .card.right-1 img { filter: grayscale(100%); }
+        .card.right-2 { z-index: 1; transform: translateX(400px) scale(0.8) translateZ(-300px); opacity: 0.7; }
+        .card.right-2 img { filter: grayscale(100%); }
+        .card.hidden { opacity: 0; pointer-events: none; }
+
+        .member-info {
+            text-align: center;
+            margin-top: 40px;
+            transition: all 0.5s ease-out;
+        }
+
+        .member-name {
+            color: rgb(8, 42, 123);
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .member-name::before,
+        .member-name::after {
+            content: "";
+            position: absolute;
+            top: 100%;
+            width: 100px;
+            height: 2px;
+            background: rgb(8, 42, 123);
+        }
+
+        .member-name::before { left: -120px; }
+        .member-name::after { right: -120px; }
+
+        .member-role {
+            color: #848696;
+            font-size: 1.5rem;
+            font-weight: 500;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            padding: 10px 0;
+            margin-top: -15px;
+            position: relative;
+        }
+        .dots {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 60px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(8, 42, 123, 0.2);
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dot.active {
+            background: rgb(8, 42, 123);
+            transform: scale(1.2);
+        }
+
+        .nav-arrow {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(8, 42, 123, 0.6);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 20;
+            transition: all 0.3s ease;
+            font-size: 1.5rem;
+            border: none;
+            outline: none;
+            padding-bottom: 4px;
+        }
+
+        .nav-arrow:hover {
+            background: rgba(0, 0, 0, 0.8);
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .nav-arrow.left { left: 20px; padding-right: 3px; }
+        .nav-arrow.right { right: 20px; padding-left: 3px; }
+
+        @media (max-width: 768px) {
+            .about-title { font-size: 4.5rem; }
+            .card { width: 200px; height: 280px; }
+            .card.left-2 { transform: translateX(-250px) scale(0.8) translateZ(-300px); }
+            .card.left-1 { transform: translateX(-120px) scale(0.9) translateZ(-100px); }
+            .card.right-1 { transform: translateX(120px) scale(0.9) translateZ(-100px); }
+            .card.right-2 { transform: translateX(250px) scale(0.8) translateZ(-300px); }
+            .member-name { font-size: 2rem; }
+            .member-role { font-size: 1.2rem; }
+            .member-name::before, .member-name::after { width: 50px; }
+            .member-name::before { left: -70px; }
+            .member-name::after { right: -70px; }
+        }
+
+        /* Estilos para la animación de la matriz/espiral */
+        .matrix-section {
+            background: #101510;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Share Tech Mono', 'Fira Mono', 'Consolas', monospace;
+            padding: 40px 20px; /* Añadir padding para pantallas pequeñas */
+            box-sizing: border-box;
+        }
+
+        .matrix-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            max-width: 450px; /* Limitar el ancho para que no sea demasiado grande */
+        }
+
+        .hud-stack {
+            position: relative;
+            width: 400px;
+            height: 400px;
+            display: block;
+            margin-top: 20px;
+        }
+
+        #matrix-bg, #hud-svg {
+            position: absolute;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            display: block;
+            border-radius: 50%;
+        }
+
+        .controls {
+            z-index: 2;
+            margin-bottom: 18px;
+        }
+
+        #randomize-btn {
+            padding: 10px 24px;
+            font-size: 1.1rem;
+            background: #101510;
+            color: #39ff14;
+            border: 2px solid #39ff14;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s, transform 0.2s;
+            box-shadow: 0 0 10px rgba(57, 255, 20, 0.5); /* Sombra para efecto neón */
+        }
+        #randomize-btn:hover {
+            background: #39ff14;
+            color: #101510;
+            transform: translateY(-2px);
+            box-shadow: 0 0 15px rgba(57, 255, 20, 0.8);
+        }
+
+        #hud-svg {
+            display: block;
+            position: relative;
+            z-index: 1;
+            width: 400px;
+            height: 400px;
+        }
+
+        .spiral-path {
+            stroke: url(#spiral-gradient);
+            fill: none;
+            filter: drop-shadow(0 0 10px #39ff14) drop-shadow(0 0 24px #39ff14);
+            opacity: 0.97;
+            transition: stroke-width 0.3s;
+        }
+
+        .hud-ring {
+            stroke: #183218;
+            stroke-width: 8;
+            fill: none;
+            opacity: 0.38;
+        }
+
+        .hud-arc {
+            stroke-width: 7;
+            fill: none;
+            opacity: 0.8;
+            filter: drop-shadow(0 0 10px #39ff14);
+        }
+
+        .hud-tick {
+            stroke: #39ff14;
+            stroke-width: 2;
+            opacity: 0.22;
+        }
+
+        .energy-core {
+            fill: url(#core-gradient);
+            filter: drop-shadow(0 0 30px #39ff14);
+            opacity: 0.97;
+        }
+
+        /* Estilos para el bot de IA */
+        .ai-bot-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2rem;
+            padding: 4rem 2rem;
+            background-color: #ffffff;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            border-radius: 1rem;
+            margin: 4rem auto;
+            max-width: 900px;
+            width: 90%;
+        }
+
+        @media (min-width: 768px) {
+            .ai-bot-section {
+                flex-direction: row;
+                justify-content: center;
+                gap: 4rem;
+            }
+        }
+
+        .ai-bot {
+            scale: 4.2;
+            width: 34px;
+            aspect-ratio: 1;
+            position: relative;
+            display: grid;
+            place-items: center;
+            animation: blink 2.4s ease infinite, move-head 4.2s linear(0 0%, 0 2.27%, 0.02 4.53%, 0.04 6.8%, 0.06 9.07%, 0.1 11.33%, 0.14 13.6%, 0.25 18.15%, 0.39 22.7%, 0.56 27.25%, 0.77 31.8%, 1 36.35%, 0.89 40.9%, 0.85 43.18%, 0.81 45.45%, 0.79 47.72%, 0.77 50%, 0.75 52.27%, 0.75 54.55%, 0.75 56.82%, 0.77 59.1%, 0.79 61.38%, 0.81 63.65%, 0.85 65.93%, 0.89 68.2%, 1 72.7%, 0.97 74.98%, 0.95 77.25%, 0.94 79.53%, 0.94 81.8%, 0.94 84.08%, 0.95 86.35%, 0.97 88.63%, 1 90.9%, 0.99 93.18%, 0.98 95.45%, 0.99 97.73%, 1 100%) infinite, mouth 1.2s ease-in infinite;
+
+            .head {
+                background: linear-gradient(var(--c) 80%, color-mix(in srgb, var(--c), black 30%), var(--c));
+                border-radius: .375rem;
+                position: absolute;
+                width: 28px;
+                height: 20px;
+
+                &:before, &:after {
+                    content: '';
+                    position: absolute;
+                    left: -4px;
+                    top: 6px;
+                    width: 2px;
+                    height: 8px;
+                    background: var(--c, 1);
+                    border-radius: 2px 0 0 2px;
+                    scale: var(--ealw, 1) 1;
+                }
+                &:after {
+                    right: -4px;
+                    left: unset;
+                    border-radius: 0 2px 2px 0;
+                    scale: var(--earw, 1) 1;
+                }
+
+                .face {
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
+                    position: absolute;
+                    inset: 0 3px;
+                    background: var(--surface);
+                    translate: var(--fx) 0;
+                    border-radius: 4px;
+                    padding: 4px 4px 2px 4px;
+                    gap: 3px;
+
+                    &:before {
+                        content: '';
+                        background: var(--c);
+                        position: absolute;
+                        height: 1px;
+                        width: 10px;
+                        top: -2px;
+                        border-radius: 2px 2px 0 0;
+                        mask: radial-gradient(circle at 50% 100%, transparent 45%, black 45%);
+                    }
+
+                    .eyes {
+                        display: flex;
+                        height: 8px;
+                        gap: 6px;
+                        &:before, &:after {
+                            content: '';
+                            width: 5px;
+                            height: 8px;
+                            scale: 1 var(--elh);
+                            filter: drop-shadow(0 0 2px var(--c2));
+                            background: repeating-linear-gradient(to bottom, var(--c), var(--c) .25px, transparent .25px, transparent .6px), linear-gradient(to bottom, var(--c3), transparent 60%), var(--c2);
+                            border-radius: 1px;
+                            translate: var(--erx) 0;
+                        }
+                        &:after {
+                            scale: 1 var(--erh);
+                            translate: var(--erx) 0;
+                        }
+                    }
+
+                    .mouth {
+                        width: 10px;
+                        height: 2px;
+                        background: var(--c2);
+                        border-radius: 0 0 1px 1px;
+                        filter: drop-shadow(0 0 2px var(--c2));
+                        scale: var(--mw, 1) var(--mh, 1);
+                    }
+                }
+            }
+        }
+
+        @layer animations {
+            @keyframes blink {
+                from,10%, to { --elh: 1; --erh: 1; }
+                2% { --elh: .2; }
+                8% { --erh: .1; }
+            }
+
+            @keyframes mouth {
+                from, 30%,70%, to { --mh: 1; --mw: 1; }
+                20% { --mh: .5; }
+                60%{ --mw: .7; }
+            }
+
+            @keyframes move-head {
+                from, 20%, 40% to{ --erx: 0%; --fx: 0%; --ealw: 1; --earw: 1; }
+                10% { --erx: 20%; --fx: 10%; --ealw: 1.5; --earw: .5; }
+                30% { --erx: -20%; --fx: -10%; --ealw: .5; --earw: 1.5; }
+            }
+        }
+
+        /* Estilos para el simulador de Cloudflare */
+        .cloudflare-overlay {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #f8f8f8;
+            z-index: 9999;
+            text-align: center;
+            transition: opacity 0.5s ease-out;
+        }
+
+        .cloudflare-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .cloudflare-logo {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Estilos para los botones personalizados (KaitoNeko y Banxter) */
+        .custom-button-container {
+            display: flex;
+            flex-wrap: wrap; /* Permite que los botones se envuelvan en pantallas pequeñas */
+            justify-content: center;
+            gap: 2rem; /* Espacio entre los botones */
+            margin-top: 4rem;
+            margin-bottom: 4rem;
+        }
+
+        .custom-button {
+            position: relative;
+            padding: 12px 35px;
+            background: #fec195;
+            font-size: 17px;
+            font-weight: 500;
+            color: #181818;
+            border: 3px solid #fec195;
+            border-radius: 8px;
+            box-shadow: 0 0 0 #fec1958c;
+            transition: all 0.3s ease-in-out;
+            cursor: pointer;
+            text-decoration: none; /* Quitar subrayado del enlace */
+            display: inline-flex; /* Asegurar que el contenido del botón sea flexible */
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap; /* Evitar que el texto del botón se rompa */
+        }
+
+        .custom-button .star-1 {
+            position: absolute;
+            top: 20%;
+            left: 20%;
+            width: 25px;
+            height: auto;
+            filter: drop-shadow(0 0 0 #fffdef);
+            z-index: -5;
+            transition: all 1s cubic-bezier(0.05, 0.83, 0.43, 0.96);
+        }
+
+        .custom-button .star-2 {
+            position: absolute;
+            top: 45%;
+            left: 45%;
+            width: 15px;
+            height: auto;
+            filter: drop-shadow(0 0 0 #fffdef);
+            z-index: -5;
+            transition: all 1s cubic-bezier(0, 0.4, 0, 1.01);
+        }
+
+        .custom-button .star-3 {
+            position: absolute;
+            top: 40%;
+            left: 40%;
+            width: 5px;
+            height: auto;
+            filter: drop-shadow(0 0 0 #fffdef);
+            z-index: -5;
+            transition: all 1s cubic-bezier(0, 0.4, 0, 1.01);
+        }
+
+        .custom-button .star-4 {
+            position: absolute;
+            top: 20%;
+            left: 40%;
+            width: 8px;
+            height: auto;
+            filter: drop-shadow(0 0 0 #fffdef);
+            z-index: -5;
+            transition: all 0.8s cubic-bezier(0, 0.4, 0, 1.01);
+        }
+
+        .custom-button .star-5 {
+            position: absolute;
+            top: 25%;
+            left: 45%;
+            width: 15px;
+            height: auto;
+            filter: drop-shadow(0 0 0 #fffdef);
+            z-index: -5;
+            transition: all 0.6s cubic-bezier(0, 0.4, 0, 1.01);
+        }
+
+        .custom-button .star-6 {
+            position: absolute;
+            top: 5%;
+            left: 50%;
+            width: 5px;
+            height: auto;
+            filter: drop-shadow(0 0 0 #fffdef);
+            z-index: -5;
+            transition: all 0.8s ease;
+        }
+
+        .custom-button:hover {
+            background: transparent;
+            color: #fec195;
+            box-shadow: 0 0 25px #fec1958c;
+        }
+
+        .custom-button:hover .star-1 {
+            position: absolute;
+            top: -80%;
+            left: -30%;
+            width: 25px;
+            height: auto;
+            filter: drop-shadow(0 0 10px #fffdef);
+            z-index: 2;
+        }
+
+        .custom-button:hover .star-2 {
+            position: absolute;
+            top: -25%;
+            left: 10%;
+            width: 15px;
+            height: auto;
+            filter: drop-shadow(0 0 10px #fffdef);
+            z-index: 2;
+        }
+
+        .custom-button:hover .star-3 {
+            position: absolute;
+            top: 55%;
+            left: 25%;
+            width: 5px;
+            height: auto;
+            filter: drop-shadow(0 0 10px #fffdef);
+            z-index: 2;
+        }
+
+        .custom-button:hover .star-4 {
+            position: absolute;
+            top: 30%;
+            left: 80%;
+            width: 8px;
+            height: auto;
+            filter: drop-shadow(0 0 10px #fffdef);
+            z-index: 2;
+        }
+
+        .custom-button:hover .star-5 {
+            position: absolute;
+            top: 25%;
+            left: 115%;
+            width: 15px;
+            height: auto;
+            filter: drop-shadow(0 0 10px #fffdef);
+            z-index: 2;
+        }
+
+        .custom-button:hover .star-6 {
+            position: absolute;
+            top: 5%;
+            left: 60%;
+            width: 5px;
+            height: auto;
+            filter: drop-shadow(0 0 10px #fffdef);
+            z-index: 2;
+        }
+
+        .fil0 {
+            fill: #fffdef;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Overlay de simulación de Cloudflare -->
+    <div id="cloudflare-check" class="cloudflare-overlay">
+        <img src="https://www.cloudflare.com/favicon.ico" alt="Cloudflare Logo" class="cloudflare-logo">
+        <h2 class="text-2xl font-bold mb-2 text-gray-800">Verificar que usted es un ser humano.</h2>
+        <p class="text-lg text-gray-600 mb-4">Esto podría tardar algunos segundos.</p>
+        <p class="text-sm text-gray-500 mb-1">dash.daki.cc necesita revisar la seguridad de su conexión antes de continuar.</p>
+        <p class="text-xs text-gray-400">Ray ID: <span id="ray-id"></span></p>
+        <p class="text-xs text-gray-400">Rendimiento y seguridad de Cloudflare</p>
+    </div>
+
+    <!-- Contenedor principal del contenido, oculto inicialmente -->
+    <div id="main-content" class="w-full hidden">
+        <!-- Header: SpamWA y iconos de redes sociales -->
+        <header class="flex justify-between items-center px-8 py-4 bg-white shadow-md rounded-b-xl sticky top-0 z-40">
+            <h1 class="text-3xl font-extrabold text-blue-900">SpamWA</h1>
+            <div class="flex space-x-4">
+                <a href="https://www.youtube.com/@kaitonekox" target="_blank" class="text-red-600 hover:text-red-700 transition-colors">
+                    <i class="fab fa-youtube fa-2x"></i>
+                </a>
+                <a href="https://wa.me/" target="_blank" class="text-green-500 hover:text-green-600 transition-colors">
+                    <i class="fab fa-whatsapp fa-2x"></i>
+                </a>
+                <a href="https://t.me/jjsnice" target="_blank" class="text-blue-500 hover:text-blue-600 transition-colors">
+                    <i class="fab fa-telegram fa-2x"></i>
+                </a>
+            </div>
+        </header>
+
+        <!-- Sección del Carrusel de Nuestro Equipo -->
+        <section class="carousel-container-wrapper">
+            <h1 class="about-title">JJSnice</h1>
+            <div class="carousel-container">
+                <button class="nav-arrow left">‹</button>
+                <div class="carousel-track">
+                    <div class="card" data-index="0"><img src="Maplespe.jpg" alt="Team Member 1"></div>
+                    <div class="card" data-index="1"><img src="uh.jpg" alt="Team Member 2"></div>
+                    <div class="card" data-index="2"><img src="h.jpg" alt="Team Member 3"></div>
+                    <div class="card" data-index="3"><img src="yosek.jpg" alt="Team Member 4"></div>
+                    <div class="card" data-index="4"><img src="N.jpg" alt="Team Member 5"></div>
+                    <div class="card" data-index="5"><img src="j.jpg" alt="Team Member 6"></div>
+                </div>
+                <button class="nav-arrow right">›</button>
+            </div>
+            <div class="member-info">
+                <h2 class="member-name"></h2>
+                <p class="member-role"></p>
+            </div>
+            <div class="dots">
+                <div class="dot" data-index="0"></div>
+                <div class="dot" data-index="1"></div>
+                <div class="dot" data-index="2"></div>
+                <div class="dot" data-index="3"></div>
+                <div class="dot" data-index="4"></div>
+                <div class="dot" data-index="5"></div>
+            </div>
+        </section>
+
+        <!-- Texto descriptivo de SpamWA -->
+        <section class="max-w-4xl mx-auto text-center text-lg text-gray-700 mb-16 px-4">
+            <p>Somos un equipo de desarrolladores independientes, en este caso SpamWA solo esta hecho por 2 personas del equipo que son Banxter y KaitoNeko, SpamWA es un bot de whatsapp que te permite hacer spam a un numero telefónico existente de whatsapp, enviando cualquier cantidad de mensajes por un tiempo moderado, claramente "Solo con fines educativos" se podría decir, espero que disfrutes de SpamWA y posiblemente se hagan mantenimientos frecuentemente por razones obvias.</p>
+        </section>
+
+        <!-- Sección de animación de la matriz/espiral -->
+        <section class="matrix-section">
+            <div class="matrix-container">
+                <div class="controls">
+                    <button id="randomize-btn">Randomize Spiral</button>
+                </div>
+                <div class="hud-stack">
+                    <canvas id="matrix-bg" width="400" height="400"></canvas>
+                    <svg id="hud-svg" width="400" height="400" viewBox="0 0 400 400"></svg>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección del Bot de IA y su información -->
+        <section class="ai-bot-section">
+            <div class="ai-bot">
+                <div class="head">
+                    <div class="face">
+                        <div class="eyes"> </div>
+                        <div class="mouth"> </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-col items-center md:items-start text-center md:text-left p-4">
+                <p class="text-xl md:text-2xl font-semibold text-gray-800 mb-6">
+                    Hola, Soy SpamWA, un bot de whatsapp que da sacrificio por ti para hacer spam con fines educativos, recuerda hacerlo por el bien.
+                </p>
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <a href="https://example.com/hablar" target="_blank" class="px-6 py-3 bg-blue-600 text-white font-bold rounded-lg shadow-md hover:bg-blue-700 transition-colors">
+                        Hablar
+                    </a>
+                    <a href="https://example.com/tecnologias" target="_blank" class="px-6 py-3 bg-gray-300 text-gray-800 font-bold rounded-lg shadow-md hover:bg-gray-400 transition-colors">
+                        Tecnologías
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- Sección de la API de SpamWA -->
+        <section class="max-w-4xl mx-auto py-16 px-4 bg-white rounded-lg shadow-lg my-16 text-center">
+            <h2 class="text-3xl font-bold text-gray-900 mb-6">API de SpamWA</h2>
+            <p class="text-gray-700 text-lg mb-6">
+                Descubre el poder de SpamWA a través de nuestra API, disponible en <a href="https://spamwa.drexelxx.workers.dev/" target="_blank" class="text-blue-600 hover:underline font-semibold">https://spamwa.drexelxx.workers.dev/</a>.
+                Esta API ofrece una tecnología similar a la de nuestro bot principal, permitiendo la automatización de mensajes
+                con algunas limitaciones para asegurar un tráfico saludable y un uso responsable. Es una herramienta poderosa
+                para desarrolladores que deseen integrar funcionalidades de spam con fines educativos y de prueba en sus propios proyectos.
+                Asegúrate de revisar la documentación de la API para entender todas sus capacidades y restricciones.
+            </p>
+        </section>
+
+        <!-- Sección del Paquete NPM: SpamWA-Beta -->
+        <section class="max-w-4xl mx-auto py-16 px-4 bg-white rounded-lg shadow-lg my-16 text-center">
+            <h2 class="text-3xl font-bold text-gray-900 mb-6">Paquete NPM: SpamWA-Beta</h2>
+            <p class="text-gray-700 text-lg mb-6">
+                Para los entusiastas de NodeJS, presentamos <strong>SpamWA-Beta</strong>, un paquete disponible en NPM. Este sub-bot
+                ofrece una tecnología que te permite expandir las capacidades de tu bot de WhatsApp, convirtiéndote en parte de
+                una red más amplia. Si bien no tiene un objetivo predefinido más allá de ser una herramienta flexible,
+                puedes explorarlo y adaptarlo a tus necesidades específicas de desarrollo.
+                Es ideal para experimentar con la infraestructura de bots y para aquellos que buscan un entorno más controlado
+                para probar y entender la lógica de envío masivo de mensajes.
+                Mantenemos este paquete con la idea de que la comunidad pueda innovar y construir sobre él, siempre bajo la premisa
+                de un uso ético y responsable. Consulta la documentación del paquete en NPM para más detalles y cómo empezar.
+            </p>
+        </section>
+
+        <!-- Botones de KaitoNeko y Banxter -->
+        <div class="custom-button-container">
+            <a href="kaitoneko/index.html" target="_blank" class="custom-button">
+                KaitoNeko
+                <div class="star-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd" viewBox="0 0 784.11 815.53" xmlns:xlink="http://www.w3.org/1999/xlink">
+                        <defs></defs>
+                        <g id="Layer_x0020_1">
+                            <metadata id="CorelCorpID_0Corel-Layer"></metadata>
+                            <path class="fil0" d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"></path>
+                        </g>
+                    </svg>
+                </div>
+                <div class="star-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd" viewBox="0 0 784.11 815.53" xmlns:xlink="http://www.w3.org/1999/xlink">
+                        <defs></defs>
+                        <g id="Layer_x0020_1">
+                            <metadata id="CorelCorpID_0Corel-Layer"></metadata>
+                            <path class="fil0" d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"></path>
+                        </g>
+                    </svg>
+                </div>
+                <div class="star-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd" viewBox="0 0 784.11 815.53" xmlns:xlink="http://www.w3.org/1999/xlink">
+                        <defs></defs>
+                        <g id="Layer_x0020_1">
+                            <metadata id="CorelCorpID_0Corel-Layer"></metadata>
+                            <path class="fil0" d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"></path>
+                        </g>
+                    </svg>
+                </div>
+                <div class="star-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd" viewBox="0 0 784.11 815.53" xmlns:xlink="http://www.w3.org/1999/xlink">
+                        <defs></defs>
+                        <g id="Layer_x0020_1">
+                            <metadata id="CorelCorpID_0Corel-Layer"></metadata>
+                            <path class="fil0" d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"></path>
+                        </g>
+                    </svg>
+                </div>
+                <div class="star-5">
+                    <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd" viewBox="0 0 784.11 815.53" xmlns:xlink="http://www.w3.org/1999/xlink">
+                        <defs></defs>
+                        <g id="Layer_x0020_1">
+                            <metadata id="CorelCorpID_0Corel-Layer"></metadata>
+                            <path class="fil0" d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"></path>
+                        </g>
+                    </svg>
+                </div>
+                <div class="star-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd" viewBox="0 0 784.11 815.53" xmlns:xlink="http://www.w3.org/1999/xlink">
+                        <defs></defs>
+                        <g id="Layer_x0020_1">
+                            <metadata id="CorelCorpID_0Corel-Layer"></metadata>
+                            <path class="fil0" d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"></path>
+                        </g>
+                    </svg>
+                </div>
+            </a>
+            <a href="banxter/index.html" target="_blank" class="custom-button">
+                Banxter
+                <div class="star-1">
+                    <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd" viewBox="0 0 784.11 815.53" xmlns:xlink="http://www.w3.org/1999/xlink">
+                        <defs></defs>
+                        <g id="Layer_x0020_1">
+                            <metadata id="CorelCorpID_0Corel-Layer"></metadata>
+                            <path class="fil0" d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"></path>
+                        </g>
+                    </svg>
+                </div>
+                <div class="star-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd" viewBox="0 0 784.11 815.53" xmlns:xlink="http://www.w3.org/1999/xlink">
+                        <defs></defs>
+                        <g id="Layer_x0020_1">
+                            <metadata id="CorelCorpID_0Corel-Layer"></metadata>
+                            <path class="fil0" d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"></path>
+                        </g>
+                    </svg>
+                </div>
+                <div class="star-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd" viewBox="0 0 784.11 815.53" xmlns:xlink="http://www.w3.org/1999/xlink">
+                        <defs></defs>
+                        <g id="Layer_x0020_1">
+                            <metadata id="CorelCorpID_0Corel-Layer"></metadata>
+                            <path class="fil0" d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"></path>
+                        </g>
+                    </svg>
+                </div>
+                <div class="star-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd" viewBox="0 0 784.11 815.53" xmlns:xlink="http://www.w3.org/1999/xlink">
+                        <defs></defs>
+                        <g id="Layer_x0020_1">
+                            <metadata id="CorelCorpID_0Corel-Layer"></metadata>
+                            <path class="fil0" d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"></path>
+                        </g>
+                    </svg>
+                </div>
+                <div class="star-5">
+                    <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd" viewBox="0 0 784.11 815.53" xmlns:xlink="http://www.w3.org/1999/xlink">
+                        <defs></defs>
+                        <g id="Layer_x0020_1">
+                            <metadata id="CorelCorpID_0Corel-Layer"></metadata>
+                            <path class="fil0" d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"></path>
+                        </g>
+                    </svg>
+                </div>
+                <div class="star-6">
+                    <svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" version="1.1" style="shape-rendering:geometricPrecision; text-rendering:geometricPrecision; image-rendering:optimizeQuality; fill-rule:evenodd; clip-rule:evenodd" viewBox="0 0 784.11 815.53" xmlns:xlink="http://www.w3.org/1999/xlink">
+                        <defs></defs>
+                        <g id="Layer_x0020_1">
+                            <metadata id="CorelCorpID_0Corel-Layer"></metadata>
+                            <path class="fil0" d="M392.05 0c-20.9,210.08 -184.06,378.41 -392.05,407.78 207.96,29.37 371.12,197.68 392.05,407.74 20.93,-210.06 184.09,-378.37 392.05,-407.74 -207.98,-29.38 -371.16,-197.69 -392.06,-407.78z"></path>
+                        </g>
+                    </svg>
+                </div>
+            </a>
+        </div>
+
+        <!-- Footer de Copyright -->
+        <footer class="text-center py-8 text-gray-500 text-sm">
+            &copy; 2025 JJSnice. All Rights Reserved.
+        </footer>
+    </div>
+
+    <script>
+        // --- JavaScript para la simulación de Cloudflare ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const cloudflareOverlay = document.getElementById('cloudflare-check');
+            const mainContent = document.getElementById('main-content');
+            const rayIdElement = document.getElementById('ray-id');
+
+            // Generar un Ray ID aleatorio
+            rayIdElement.textContent = Math.random().toString(36).substring(2, 15).toUpperCase();
+
+            // Simular el retraso de Cloudflare
+            setTimeout(() => {
+                cloudflareOverlay.classList.add('hidden'); // Ocultar con animación
+                setTimeout(() => {
+                    cloudflareOverlay.style.display = 'none'; // Eliminar del flujo del documento
+                    mainContent.classList.remove('hidden'); // Mostrar el contenido principal
+                    mainContent.classList.add('flex', 'flex-col'); // Añadir clases flex para que el contenido se vea correctamente
+                }, 500); // Esperar a que la transición termine
+            }, 3000); // 3 segundos para la simulación de Cloudflare
+
+            // --- JavaScript para el Carrusel del Equipo ---
+            const teamMembers = [
+                { name: "KaitoNeko", role: "Founder" },
+                { name: "Ondarion", role: "Programador full-stack" },
+                { name: "Drexel", role: "UX Designer" },
+                { name: "Yosek", role: "Hacking" },
+                { name: "Source Developer", role: "Scripting" },
+                { name: "Banxter", role: "Programador frontend" }
+            ];
+
+            const cards = document.querySelectorAll(".card");
+            const dots = document.querySelectorAll(".dot");
+            const memberName = document.querySelector(".member-name");
+            const memberRole = document.querySelector(".member-role");
+            const leftArrow = document.querySelector(".nav-arrow.left");
+            const rightArrow = document.querySelector(".nav-arrow.right");
+            let currentIndex = 0;
+            let isAnimating = false;
+
+            function updateCarousel(newIndex) {
+                if (isAnimating) return;
+                isAnimating = true;
+
+                currentIndex = (newIndex + cards.length) % cards.length;
+
+                cards.forEach((card, i) => {
+                    const offset = (i - currentIndex + cards.length) % cards.length;
+
+                    card.classList.remove(
+                        "center",
+                        "left-1",
+                        "left-2",
+                        "right-1",
+                        "right-2",
+                        "hidden"
+                    );
+
+                    if (offset === 0) {
+                        card.classList.add("center");
+                    } else if (offset === 1) {
+                        card.classList.add("right-1");
+                    } else if (offset === 2) {
+                        card.classList.add("right-2");
+                    } else if (offset === cards.length - 1) {
+                        card.classList.add("left-1");
+                    } else if (offset === cards.length - 2) {
+                        card.classList.add("left-2");
+                    } else {
+                        card.classList.add("hidden");
+                    }
+                });
+
+                dots.forEach((dot, i) => {
+                    dot.classList.toggle("active", i === currentIndex);
+                });
+
+                memberName.style.opacity = "0";
+                memberRole.style.opacity = "0";
+
+                setTimeout(() => {
+                    memberName.textContent = teamMembers[currentIndex].name;
+                    memberRole.textContent = teamMembers[currentIndex].role;
+                    memberName.style.opacity = "1";
+                    memberRole.style.opacity = "1";
+                }, 300);
+
+                setTimeout(() => {
+                    isAnimating = false;
+                }, 800);
+            }
+
+            leftArrow.addEventListener("click", () => {
+                updateCarousel(currentIndex - 1);
+            });
+
+            rightArrow.addEventListener("click", () => {
+                updateCarousel(currentIndex + 1);
+            });
+
+            dots.forEach((dot, i) => {
+                dot.addEventListener("click", () => {
+                    updateCarousel(i);
+                });
+            });
+
+            cards.forEach((card, i) => {
+                card.addEventListener("click", () => {
+                    updateCarousel(i);
+                });
+            });
+
+            document.addEventListener("keydown", (e) => {
+                if (e.key === "ArrowLeft") {
+                    updateCarousel(currentIndex - 1);
+                } else if (e.key === "ArrowRight") {
+                    updateCarousel(currentIndex + 1);
+                }
+            });
+
+            let touchStartX = 0;
+            let touchEndX = 0;
+
+            document.addEventListener("touchstart", (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+            });
+
+            document.addEventListener("touchend", (e) => {
+                touchEndX = e.changedTouches[0].screenX;
+                handleSwipe();
+            });
+
+            function handleSwipe() {
+                const swipeThreshold = 50;
+                const diff = touchStartX - touchEndX;
+
+                if (Math.abs(diff) > swipeThreshold) {
+                    if (diff > 0) {
+                        updateCarousel(currentIndex + 1);
+                    } else {
+                        updateCarousel(currentIndex - 1);
+                    }
+                }
+            }
+
+            updateCarousel(0); // Inicializar el carrusel en la primera tarjeta
+
+            // --- JavaScript para la animación de la Matriz/Espiral ---
+            const svg = document.getElementById("hud-svg");
+            let spiralSpeed = 0.5; // siempre 0.5x para la versión maestra
+
+            // --- Constantes para ajustar el contenedor ---
+            const SIZE = 400;
+            const CX = SIZE / 2;
+            const CY = SIZE / 2;
+            const SAFE_MARGIN = 24; // px, desde el borde
+
+            // --- Degradados ---
+            function addGradients(svgElement) {
+                const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
+                defs.innerHTML = `
+                    <linearGradient id="spiral-gradient" x1="0" y1="0" x2="1" y2="1">
+                        <stop offset="0%" stop-color="#39ff14"/>
+                        <stop offset="100%" stop-color="#baffc9"/>
+                    </linearGradient>
+                    <radialGradient id="core-gradient" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%" stop-color="#39ff14" stop-opacity="1"/>
+                        <stop offset="100%" stop-color="#101510" stop-opacity="0.1"/>
+                    </radialGradient>
+                `;
+                svgElement.appendChild(defs);
+                return defs;
+            }
+
+            // --- Anillos, Arcos, Ticks, Núcleo del HUD ---
+            function drawHUD(svgElement, spiralOuterRadius) {
+                // Anillo exterior del HUD justo dentro del borde del SVG
+                const ringRadii = [
+                    spiralOuterRadius + 12,
+                    spiralOuterRadius - 8,
+                    spiralOuterRadius - 28
+                ];
+                const ringConfigs = [
+                    { r: ringRadii[0], color: "#183218", width: 8, class: "hud-ring" },
+                    { r: ringRadii[1], color: "#183218", width: 6, class: "hud-ring" },
+                    { r: ringRadii[2], color: "#39ff14", width: 2, class: "hud-tick" }
+                ];
+                ringConfigs.forEach(cfg => {
+                    const ring = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                    ring.setAttribute("cx", CX);
+                    ring.setAttribute("cy", CY);
+                    ring.setAttribute("r", cfg.r);
+                    ring.setAttribute("stroke", cfg.color);
+                    ring.setAttribute("stroke-width", cfg.width);
+                    ring.setAttribute("fill", "none");
+                    ring.setAttribute("class", cfg.class);
+                    svgElement.appendChild(ring);
+                });
+
+                // Arcos
+                function arcPath(cx, cy, r, startAngle, endAngle) {
+                    const rad = Math.PI / 180;
+                    const x1 = cx + r * Math.cos(startAngle * rad);
+                    const y1 = cy + r * Math.sin(startAngle * rad);
+                    const x2 = cx + r * Math.cos(endAngle * rad);
+                    const y2 = cy + r * Math.sin(endAngle * rad);
+                    const largeArc = endAngle - startAngle <= 180 ? 0 : 1;
+                    return `M${x1},${y1} A${r},${r} 0 ${largeArc} 1 ${x2},${y2}`;
+                }
+                const arcColors = ["#39ff14", "#baffc9", "#39ff14", "#baffc9"];
+                const arcAngles = [
+                    [12, 92],
+                    [110, 168],
+                    [200, 238],
+                    [260, 350]
+                ];
+                arcAngles.forEach((ang, i) => {
+                    const arc = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    arc.setAttribute("d", arcPath(CX, CY, spiralOuterRadius + 8, ang[0], ang[1]));
+                    arc.setAttribute("stroke", arcColors[i]);
+                    arc.setAttribute("class", "hud-arc");
+                    svgElement.appendChild(arc);
+                });
+
+                // Ticks
+                const tickRadiusInner = spiralOuterRadius - 8;
+                const tickRadiusOuter = spiralOuterRadius + 4;
+                for (let i = 0; i < 72; i++) {
+                    const angle = (i / 72) * 360;
+                    const rad = Math.PI / 180 * angle;
+                    const x1 = CX + tickRadiusInner * Math.cos(rad);
+                    const y1 = CY + tickRadiusInner * Math.sin(rad);
+                    const x2 = CX + tickRadiusOuter * Math.cos(rad);
+                    const y2 = CY + tickRadiusOuter * Math.sin(rad);
+                    const tick = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                    tick.setAttribute("x1", x1);
+                    tick.setAttribute("y1", y1);
+                    tick.setAttribute("x2", x2);
+                    tick.setAttribute("y2", y2);
+                    tick.setAttribute("class", "hud-tick");
+                    tick.setAttribute("opacity", 0.13 + 0.15 * Math.random());
+                    svgElement.appendChild(tick);
+                }
+
+                // Energy Core
+                const core = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                core.setAttribute("cx", CX);
+                core.setAttribute("cy", CY);
+                core.setAttribute("r", 20);
+                core.setAttribute("class", "energy-core");
+                svgElement.appendChild(core);
+
+                return core;
+            }
+
+            // --- Globo Espiral (aleatorio, siempre se ajusta) ---
+            function spiralPath(cx, cy, r0, r1, turns, waviness, freq, points = 180) {
+                let path = [];
+                for (let t = 0; t <= 1; t += 1 / points) {
+                    let angle = 2 * Math.PI * turns * t + Math.sin(t * freq) * waviness;
+                    let r = r0 + (r1 - r0) * t + Math.sin(t * freq * 0.7) * (waviness * 2);
+                    let x = cx + r * Math.cos(angle);
+                    let y = cy + r * Math.sin(angle);
+                    path.push(`${t === 0 ? "M" : "L"}${x},${y}`);
+                }
+                return path.join(" ");
+            }
+
+            function drawSpiral(svgElement, defsElement, spiralParams) {
+                // Eliminar cualquier ruta espiral anterior
+                Array.from(svgElement.querySelectorAll('.spiral-path')).forEach(el => el.remove());
+
+                const {
+                    lines,
+                    offsetStep,
+                    r0Base,
+                    r1Base,
+                    turnsBase,
+                    waviness,
+                    freq,
+                    spiralMaxOffset
+                } = spiralParams;
+
+                const spiralPaths = [];
+                for (let i = 0; i < lines; i++) {
+                    const offset = (i - (lines - 1) / 2) * offsetStep;
+                    const r0 = r0Base + Math.abs(offset) * 0.7;
+                    const r1 = r1Base - Math.abs(offset) * 0.3;
+                    const turns = turnsBase + Math.sin(i) * 0.7;
+                    const pathStr = spiralPath(
+                        CX,
+                        CY + offset,
+                        r0,
+                        r1,
+                        turns,
+                        waviness,
+                        freq
+                    );
+                    const pathEl = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    pathEl.setAttribute("d", pathStr);
+                    pathEl.setAttribute("class", "spiral-path");
+                    pathEl.setAttribute("stroke-width", 1.6 + 1.5 * Math.abs(Math.sin(i + Math.random())));
+                    svgElement.appendChild(pathEl);
+                    spiralPaths.push(pathEl);
+                }
+                return spiralPaths;
+            }
+
+            // --- Animar líneas en espiral ---
+            function animateSpiral(spiralPaths) {
+                spiralPaths.forEach((path, i) => {
+                    const length = path.getTotalLength();
+                    path.style.strokeDasharray = length;
+                    path.style.strokeDashoffset = length;
+                    anime({
+                        targets: path,
+                        strokeDashoffset: [length, 0],
+                        duration: (1400 + 90 * Math.abs(Math.sin(i))) / spiralSpeed,
+                        delay: i * 30 + 500,
+                        easing: "easeInOutCubic"
+                    });
+                });
+            }
+
+            // --- Animar Arcos del HUD ---
+            function animateHUDArcs() {
+                anime({
+                    targets: ".hud-arc",
+                    strokeDashoffset: [anime.setDashoffset, 0],
+                    duration: 1800 / spiralSpeed,
+                    delay: anime.stagger(220, { from: "center" }),
+                    easing: "easeInOutCubic"
+                });
+            }
+
+            // --- Animar Pulso del Núcleo ---
+            function animateCore(core) {
+                anime({
+                    targets: core,
+                    r: [
+                        { value: 26, duration: 700 / spiralSpeed },
+                        { value: 20, duration: 700 / spiralSpeed }
+                    ],
+                    easing: "easeInOutSine",
+                    direction: "alternate",
+                    loop: true
+                });
+            }
+
+            // --- Ciclo de color del degradado espiral ---
+            function cycleGradient(defsElement) {
+                let stop1 = defsElement.querySelector('linearGradient stop[offset="0%"]');
+                let stop2 = defsElement.querySelector('linearGradient stop[offset="100%"]');
+                let t = 0;
+                function animateGradient() {
+                    t += 0.015;
+                    stop1.setAttribute("stop-color", `hsl(${120 + Math.sin(t)*30},100%,60%)`);
+                    stop2.setAttribute("stop-color", `hsl(${140 + Math.cos(t)*30},100%,70%)`);
+                    requestAnimationFrame(animateGradient);
+                }
+                animateGradient();
+            }
+
+            // --- Parámetros de espiral aleatorios (siempre se ajusta) ---
+            function randomSpiralParams() {
+                // La espiral debe caber dentro del HUD, por lo que el radio exterior máximo es:
+                const spiralMaxRadius = CX - SAFE_MARGIN - 30; // 30px de margen para anillos/arcos del HUD
+                const lines = Math.floor(15 + Math.random() * 8); // 15-22 líneas
+                const offsetStep = Math.min(9 + Math.random() * 10, (spiralMaxRadius-30)/(lines/2)); // ajustar todos los desplazamientos
+                const spiralMaxOffset = ((lines - 1) / 2) * offsetStep;
+                const r0Base = 42 + Math.random() * 10; // radio inicial
+                const r1Base = spiralMaxRadius - spiralMaxOffset; // radio máximo de la espiral, menos el desplazamiento
+                const turnsBase = 2.6 + Math.random() * 1.1;
+                const waviness = 0.18 + Math.random() * 0.38;
+                const freq = 6 + Math.random() * 5;
+                return {
+                    lines,
+                    offsetStep,
+                    r0Base,
+                    r1Base,
+                    turnsBase,
+                    waviness,
+                    freq,
+                    spiralMaxOffset
+                };
+            }
+
+            // --- Función de renderizado principal ---
+            function renderHUD() {
+                svg.innerHTML = '';
+                const spiralParams = randomSpiralParams();
+                const spiralOuterRadius = spiralParams.r1Base + spiralParams.spiralMaxOffset + 8;
+                const defs = addGradients(svg);
+                drawHUD(svg, spiralOuterRadius);
+                const spiralPaths = drawSpiral(svg, defs, spiralParams);
+                animateSpiral(spiralPaths);
+                animateHUDArcs();
+                const core = svg.querySelector('.energy-core');
+                animateCore(core);
+                cycleGradient(defs);
+            }
+
+            // --- Manejador del botón ---
+            document.getElementById('randomize-btn').addEventListener('click', renderHUD);
+
+            // --- Renderizado inicial ---
+            renderHUD();
+        });
+    </script>
+</body>
+</html>
